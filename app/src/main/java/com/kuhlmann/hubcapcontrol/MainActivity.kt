@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         report("Ready")
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun connectToServer() {
         withContext(Dispatchers.IO) {
             try {
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun sendMessage() {
         try {
             val b0 = binding.byte0EditText.text.toString().toInt()
