@@ -30,11 +30,11 @@ class MainActivity : AppCompatActivity() {
         report("Ready")
     }
 
-    suspend fun connectToServer() {
-        val address = InetAddress.getByName(binding.serverEditText.text.toString())
-        val port = binding.portEditText.text.toString().toInt()
+    private suspend fun connectToServer() {
         withContext(Dispatchers.IO) {
             try {
+                val address = InetAddress.getByName(binding.serverEditText.text.toString())
+                val port = binding.portEditText.text.toString().toInt()
                 socket = Socket(address, port)
                 timer.scheduleAtFixedRate(PulseTask(), 1000, 1000)
             } catch (e: Exception) {
@@ -51,13 +51,9 @@ class MainActivity : AppCompatActivity() {
 
     fun closeSocket() {
         if (socket != null) {
-            socket!!.close();
-            socket = null;
+            socket!!.close()
+            socket = null
         }
-    }
-
-    fun sendPulse() {
-
     }
 
     fun updateConnectionStatus() {
@@ -69,31 +65,31 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    suspend fun sendMessage() {
+    private suspend fun sendMessage() {
         try {
             val b0 = binding.byte0EditText.text.toString().toInt()
             val b1 = binding.byte1EditText.text.toString().toInt()
             val b2 = binding.byte2EditText.text.toString().toInt()
             val b3 = binding.byte3EditText.text.toString().toInt()
             if (b0 !in 0..255) {
-                report("Byte value ${b0} out of range.")
+                report("Byte value $b0 out of range.")
                 return
             }
             if (b1 !in 0..255) {
-                report("Byte value ${b1} out of range.")
+                report("Byte value $b1 out of range.")
                 return
             }
             if (b2 !in 0..255) {
-                report("Byte value ${b2} out of range.")
+                report("Byte value $b2 out of range.")
                 return
             }
             if (b3 !in 0..255) {
-                report("Byte value ${b3} out of range.")
+                report("Byte value $b3 out of range.")
                 return
             }
             withContext(Dispatchers.IO) {
                 try {
-                    val stream = socket!!.getOutputStream();
+                    val stream = socket!!.getOutputStream()
                     stream.write(b0)
                     stream.write(b1)
                     stream.write(b2)
@@ -131,9 +127,9 @@ class MainActivity : AppCompatActivity() {
                     stream.flush()
                     runOnUiThread { report("Sent pulse.") }
                 } catch (e: Exception) {
-                    closeSocket();
+                    closeSocket()
                     runOnUiThread {
-                        updateConnectionStatus();
+                        updateConnectionStatus()
                         report("Error sending pulse: " + e.message)
                     }
                 }
