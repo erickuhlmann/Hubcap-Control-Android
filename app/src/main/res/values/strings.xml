@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Hubcap Control</string>
+    <string name="network">Network:</string>
+    <string name="network_name">Network Name</string>
+    <string name="server">Server:</string>
+    <string name="default_network">HUBCAP-01</string>
+    <string name="port">Port:</string>
+    <string name="default_server">192.168.4.1</string>
+    <string name="default_port">65123</string>
+    <string name="output">Output</string>
+    <string name="send">Send</string>
+    <string name="default_byte">0</string>
+    <string name="connect">Connect</string>
+    <string name="not_connected">Not connected</string>
+    <string name="connected">Connected</string>
+    <string name="default_password">12345678</string>
+</resources>
