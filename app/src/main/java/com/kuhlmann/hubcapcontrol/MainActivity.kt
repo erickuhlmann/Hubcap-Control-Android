@@ -5,6 +5,7 @@ import android.media.effect.EffectContext
 import android.net.wifi.WifiManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.WindowManager
 import com.kuhlmann.hubcapcontrol.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -16,7 +17,10 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
     private var socket: Socket? = null
+    private val socketLock = Any()
+
     private val timer: Timer = Timer()
 
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
@@ -25,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         binding.connectButton.setOnClickListener{ scope.launch { connectToServer() } }
         binding.sendbutton.setOnClickListener{ scope.launch { sendMessage() } }
         report("Ready")
@@ -33,15 +38,17 @@ class MainActivity : AppCompatActivity() {
     @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun connectToServer() {
         withContext(Dispatchers.IO) {
-            try {
-                val address = InetAddress.getByName(binding.serverEditText.text.toString())
-                val port = binding.portEditText.text.toString().toInt()
-                socket = Socket(address, port)
-                timer.scheduleAtFixedRate(PulseTask(), 1000, 1000)
-            } catch (e: Exception) {
-                closeSocket()
-                runOnUiThread {
-                    report("Error connecting to server: " + e.toString() + ": " + e.message)
+            synchronized(socketLock) {
+                try {
+                    val address = InetAddress.getByName(binding.serverEditText.text.toString())
+                    val port = binding.portEditText.text.toString().toInt()
+                    socket = Socket(address, port)
+                    timer.scheduleAtFixedRate(PulseTask(), 1000, 1000)
+                } catch (e: Exception) {
+                    closeSocket()
+                    runOnUiThread {
+                        report("Error connecting to server: " + e.toString() + ": " + e.message)
+                    }
                 }
             }
             runOnUiThread {
@@ -51,19 +58,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun closeSocket() {
-        if (socket != null) {
-            socket!!.close()
-            socket = null
+        synchronized(socketLock) {
+            if (socket != null) {
+                socket!!.close()
+                socket = null
+            }
         }
     }
 
     fun updateConnectionStatus() {
-        if (socket != null && socket!!.isConnected) {
-            binding.statusTextView.text = getString(R.string.connected)
-        } else {
-            binding.statusTextView.text = getString(R.string.not_connected)
+        synchronized(socketLock) {
+            if (socket != null && socket!!.isConnected) {
+                binding.statusTextView.text = getString(R.string.connected)
+            } else {
+                binding.statusTextView.text = getString(R.string.not_connected)
+            }
         }
-
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -91,11 +101,13 @@ class MainActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.IO) {
                 try {
-                    val stream = socket!!.getOutputStream()
-                    stream.write(b0)
-                    stream.write(b1)
-                    stream.write(b2)
-                    stream.write(b3)
+                    synchronized(socketLock) {
+                        val stream = socket!!.getOutputStream()
+                        stream.write(b0)
+                        stream.write(b1)
+                        stream.write(b2)
+                        stream.write(b3)
+                    }
                 } catch (e: Exception) {
                     closeSocket()
                     runOnUiThread {
@@ -118,15 +130,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     inner class PulseTask: TimerTask() {
-
         override fun run() {
             if (socket != null) {
                 try {
-                    val stream = socket!!.getOutputStream()
-                    for (i in 1..4) {
-                        stream.write(0)
+                    synchronized(socketLock) {
+                        val stream = socket!!.getOutputStream()
+                        for (i in 1..4) {
+                            stream.write(0)
+                        }
+                        stream.flush()
                     }
-                    stream.flush()
                     runOnUiThread { report("Sent pulse.") }
                 } catch (e: Exception) {
                     closeSocket()
