@@ -6,6 +6,7 @@ import android.net.wifi.WifiManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.EditText
 import com.kuhlmann.hubcapcontrol.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -79,26 +80,10 @@ class MainActivity : AppCompatActivity() {
     @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun sendMessage() {
         try {
-            val b0 = binding.byte0EditText.text.toString().toInt()
-            val b1 = binding.byte1EditText.text.toString().toInt()
-            val b2 = binding.byte2EditText.text.toString().toInt()
-            val b3 = binding.byte3EditText.text.toString().toInt()
-            if (b0 !in 0..255) {
-                report("Byte value $b0 out of range.")
-                return
-            }
-            if (b1 !in 0..255) {
-                report("Byte value $b1 out of range.")
-                return
-            }
-            if (b2 !in 0..255) {
-                report("Byte value $b2 out of range.")
-                return
-            }
-            if (b3 !in 0..255) {
-                report("Byte value $b3 out of range.")
-                return
-            }
+            val b0 = getByteFromControl(binding.byte0EditText)
+            val b1 = getByteFromControl(binding.byte1EditText)
+            val b2 = getByteFromControl(binding.byte2EditText)
+            val b3 = getByteFromControl(binding.byte3EditText)
             withContext(Dispatchers.IO) {
                 try {
                     synchronized(socketLock) {
@@ -119,6 +104,14 @@ class MainActivity : AppCompatActivity() {
         } catch (e: NumberFormatException) {
             report("Invalid byte value: " + e.message)
         }
+    }
+
+    private fun getByteFromControl(control: EditText): Int {
+        val b = control.text.toString().toInt()
+        if (b !in 0..255) {
+            throw NumberFormatException("Byte value $b out of range.")
+        }
+        return b
     }
 
     fun report(line: String) {
